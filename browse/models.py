@@ -165,6 +165,9 @@ class Entity(MPTTModel):
     def __str__(self):
         return self.name
 
+    class Meta:
+        verbose_name_plural = "entities"
+
 
 def format_spec_directory_path(instance, filename):
     # The ".split" trick enables proper treatment of MIME types like
@@ -258,6 +261,9 @@ class Quantity(models.Model):
 
     def __str__(self):
         return f"{self.name} ({str(self.uuid)[0:8]})"
+
+    class Meta:
+        verbose_name_plural = "quantities"
 
 
 def data_file_directory_path(instance, filename):
