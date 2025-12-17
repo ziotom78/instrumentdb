@@ -1,5 +1,7 @@
 # HEAD
 
+-   Drop support for Python 3.8 and 3.9 [#157](https://github.com/ziotom78/instrumentdb/pull/157)
+
 # Version 2.0.3
 
 -   Add RESTful API endpoints for downloading files [#131](https://github.com/ziotom78/instrumentdb/pull/131)
