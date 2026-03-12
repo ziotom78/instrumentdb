@@ -1,5 +1,7 @@
 # HEAD
 
+-   Add command to delete orphaned objects [#159](https://github.com/ziotom78/instrumentdb/pull/162) (Miguel Gomes)
+
 -   Drop support for Python 3.8 and 3.9 [#157](https://github.com/ziotom78/instrumentdb/pull/157)
 
 # Version 2.0.3
