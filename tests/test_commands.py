@@ -473,3 +473,40 @@ class TextExport(TestCase):
         self.assertEqual(len(Quantity.objects.all()), 0)
         self.assertEqual(len(Entity.objects.all()), 0)
         self.assertEqual(len(Release.objects.all()), 0)
+
+    def test_delete_orphaned(self):
+        # release1 already has 2 data files from setUp()
+        self.assertEqual(self.release1.data_files.count(), 2)
+
+        # create a data file not associated with any release
+        orphan_data_file = DataFile(
+            name="orphaned_file",
+            upload_date="2023-01-02T03:04:05",
+            metadata='{"orphaned_metadata_field": 1}',
+            file_data=SimpleUploadedFile(
+                name="orphaned_datafile.json",
+                content=b'{"orphaned_file_field": 1}',
+            ),
+            quantity=self.quantity_subchild2,
+            spec_version="v1.0",
+            plot_file=get_white_test_image(),
+            plot_mime_type="image/gif",
+            comment="Orphaned data file",
+        )
+        orphan_data_file.save()
+
+        # checking it was correctly created
+        self.assertTrue(DataFile.objects.filter(pk=orphan_data_file.pk).exists())
+
+        # calling the command to delete orphaned data files
+        call_command("delete-data-files", "--orphaned")
+
+        # confirming that the orphaned data file it does no longer exist
+        self.assertFalse(DataFile.objects.filter(pk=orphan_data_file.pk).exists())
+
+        # confirming release1 still has 2 data files
+        self.assertEqual(self.release1.data_files.count(), 2)
+
+        # assert the two data files belonging to release1 still exist
+        self.assertTrue(DataFile.objects.filter(pk=self.subchild1_file1.pk).exists())
+        self.assertTrue(DataFile.objects.filter(pk=self.subchild1_file2.pk).exists())

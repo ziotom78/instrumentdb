@@ -23,6 +23,11 @@ class Command(BaseCommand):
             help="Read the UUIDs of the objects to be deleted from file (one UUID per line)",
         )
         parser.add_argument(
+            "--orphaned",
+            action="store_true",
+            help="Delete all the objects in the database that do not belong to a release.",
+        )
+        parser.add_argument(
             "uuids",
             nargs="*",
             type=str,
@@ -59,6 +64,12 @@ class Command(BaseCommand):
 
                 if cur_num > 0:
                     num_of_objects_in_releases[cur_release] = cur_num
+
+        # This deletes the orphaned objects (not belonging to any release),
+        # keeping the entity tree structure and other objects intact
+        if options.get("orphaned", False):
+            for cur_obj in DataFile.objects.filter(release_tags__isnull=True):
+                list_of_uuids.append(cur_obj.pk)
 
         ########################################################
         # Delete the objects
