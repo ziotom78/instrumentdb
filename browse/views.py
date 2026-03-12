@@ -6,6 +6,7 @@ import mimetypes
 from math import ceil
 from pathlib import Path
 from typing import List
+import numpy as np
 
 from django.contrib.auth import authenticate
 from django.contrib.auth.decorators import login_required
@@ -608,3 +609,47 @@ def login_request(request):
         },
         status=HTTP_200_OK,
     )
+
+def focal_plane_ui_view(request):
+
+    metadatas = DataFile.objects.filter(name='detector_info').values_list('metadata', flat=True)
+    uuids = DataFile.objects.filter(name='detector_info').values_list('uuid', flat=True)
+    uuids = [str(uuid) for uuid in uuids]
+    pointing_u_v_list = []
+    channel=[]
+    pol=[]
+    ss= [150, 130, 85, 70, 40, 30]
+    sizes=[]
+    for metadata_str in metadatas:
+        metadata_dict = json.loads(metadata_str)
+        pointing_u_v = metadata_dict['pointing_u_v']
+        pointing_u_v_list.append(pointing_u_v)
+        channel.append(metadata_dict['channel'])
+        pol.append(int(np.rad2deg(metadata_dict['pol_angle_rad'])))
+        if metadata_dict['channel'][:2]=="L1":
+          sizes.append(1000/ss[5])
+        elif metadata_dict['channel'][:2]=="L2":
+          sizes.append(1000/ss[4])
+        elif metadata_dict['channel'][:2]=="M1":
+          sizes.append(1000/ss[3])
+        elif metadata_dict['channel'][:2]=="M2":
+          sizes.append(1000/ss[2])
+        elif metadata_dict['channel'][:2]=="H1":
+          sizes.append(1000/ss[1])
+        elif metadata_dict['channel'][:2]=="H2":
+          sizes.append(1000/ss[0])
+
+
+    x_values = [point[0] for point in pointing_u_v_list]
+    y_values = [point[1] for point in pointing_u_v_list]
+
+    context = {
+        'x_values': x_values,
+        'y_values': y_values,
+        'uuids': uuids,
+        'channel': channel,
+        'pol': pol,
+        'size': sizes,
+    }
+
+    return render(request, 'browse/focalplane_ui.html', context)

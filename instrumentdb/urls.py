@@ -48,6 +48,7 @@ from browse.views import (
     ReleaseDownloadView,
     UserView,
     entity_reference_view,
+    focal_plane_ui_view,
 )
 
 ################################################################################
@@ -115,6 +116,12 @@ urlpatterns = [
         FormatSpecificationDownloadView.as_view(),
         name="format-spec-download-view",
     ),
+    path(
+        "focalplane_ui/",
+        focal_plane_ui_view,
+        name="focal-plane-ui-view"
+    ),
+
     re_path(
         r"^releases/(?P<rel_name>[\w.-]+)/(?P<reference>[\w./-]+)/$", api_release_view
     ),
