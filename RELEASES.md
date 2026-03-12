@@ -9,10 +9,16 @@
     -   `CHANGELOG.md` (be sure to leave an empty `HEAD` title at the
         top);
     
+-   Run
+
+    ```
+    poetry update
+    ```
+
 -   Export the requirements:
 
     ```
     poetry export > requirements.txt
     ```
 
--   Create a `.tar.gz` file and upload it to the GitHub release page.
+-   Create a `.tar.gz` file using `poetry build` and upload it to the GitHub release page.
