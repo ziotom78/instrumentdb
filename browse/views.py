@@ -614,7 +614,7 @@ def focal_plane_ui_view(request):
 
     metadatas = DataFile.objects.filter(name='detector_info').values_list('metadata', flat=True)
     uuids = DataFile.objects.filter(name='detector_info').values_list('uuid', flat=True)
-    uuids = [str(uuid) for uuid in uuids]
+    uuids = np.array([str(uuid) for uuid in uuids])
     pointing_u_v_list = []
     channel=[]
     pol=[]
@@ -640,16 +640,98 @@ def focal_plane_ui_view(request):
           sizes.append(1000/ss[0])
 
 
-    x_values = [point[0] for point in pointing_u_v_list]
-    y_values = [point[1] for point in pointing_u_v_list]
+    pol=np.array(pol)
+    sizes=np.array(sizes)
+    channel=np.array(channel)
+    x_values = np.array([point[0] for point in pointing_u_v_list])
+    y_values = np.array([point[1] for point in pointing_u_v_list])
+
+    coords = np.column_stack((x_values, y_values))
+
+    unique_coords, unique_indices, inverse_indices = np.unique(
+        coords, axis=0, return_index=True, return_inverse=True
+    )
+
+    coord_to_indices = {}
+    for idx, coord_idx in enumerate(inverse_indices):
+        coord_tuple = tuple(unique_coords[coord_idx])
+        if coord_tuple not in coord_to_indices:
+            coord_to_indices[coord_tuple] = []
+        coord_to_indices[coord_tuple].append(idx)
+
+    x_unique = unique_coords[:, 0]
+    y_unique = unique_coords[:, 1]
+
+    uuids_unique = np.empty(len(unique_coords), dtype=object)
+    for i, coord in enumerate(unique_coords):
+        coord_tuple = tuple(coord)
+        indices = coord_to_indices[coord_tuple]
+        uuids_unique[i] = uuids[indices]
+
+
+    uuids_list = [list(uuid_array) for uuid_array in uuids_unique]
 
     context = {
-        'x_values': x_values,
-        'y_values': y_values,
-        'uuids': uuids,
-        'channel': channel,
-        'pol': pol,
-        'size': sizes,
+        'x_values': json.dumps(x_unique.tolist()),
+        'y_values': json.dumps(y_unique.tolist()),
+        'uuids': json.dumps(uuids_list),
+        'channel': json.dumps(channel[unique_indices].tolist()),
+        'pol': json.dumps(pol[unique_indices].tolist()),
+        'size': json.dumps(sizes[unique_indices].tolist()),
     }
 
+
     return render(request, 'browse/focalplane_ui.html', context)
+
+from django.http import JsonResponse
+
+from django.http import JsonResponse
+import json
+import logging
+
+logger = logging.getLogger(__name__)
+def handle_plot_click(request):
+    try:
+        uuid_string = request.GET.get('uuid')
+
+        if not uuid_string:
+            return JsonResponse({'error': 'uuid parameter is required'}, status=400)
+
+        uuids = [u.strip() for u in uuid_string.split(',')]
+
+        data_queryset = DataFile.objects.filter(uuid__in=uuids).values('uuid', 'metadata')
+
+        if not data_queryset.exists():
+            return JsonResponse({'error': 'No data found for these uuids'}, status=404)
+
+        result = {}
+        for item in data_queryset:
+            uuid_key = str(item['uuid'])
+            metadata = item['metadata']
+
+            if isinstance(metadata, str):
+                result[uuid_key] = json.loads(metadata)
+            else:
+                result[uuid_key] = metadata
+
+        return JsonResponse(result)
+
+    except Exception as e:
+        logger.error(f"Error in handle_plot_click: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+def get_full_path(request):
+    try:
+        uuid_string = request.GET.get('uuid')
+
+        if not uuid_string:
+            return JsonResponse({'error': 'uuid parameter is required'}, status=400)
+
+        obj = DataFile.objects.filter(uuid=uuid_string)
+        print(obj[0])
+
+        return JsonResponse(obj[0].full_path, safe=False)
+
+    except Exception as e:
+        logger.error(f"Error in get_full_path: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)

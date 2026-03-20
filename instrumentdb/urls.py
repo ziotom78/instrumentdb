@@ -49,6 +49,8 @@ from browse.views import (
     UserView,
     entity_reference_view,
     focal_plane_ui_view,
+    handle_plot_click,
+    get_full_path,
 )
 
 ################################################################################
@@ -141,5 +143,22 @@ urlpatterns = [
         schema_view.with_ui("swagger", cache_timeout=0),
         name="schema-swagger-ui",
     ),
-    path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
+    path(
+        "redoc/",
+        schema_view.with_ui("redoc", cache_timeout=0),
+        name="schema-redoc"
+    ),
+
+    path(
+        "handle-plot-click/",
+        handle_plot_click,
+        name="handle-plot-click"
+    ),
+
+    path(
+        "get-full-path/",
+        get_full_path,
+        name="get-full-path"
+    ),
+
 ]
