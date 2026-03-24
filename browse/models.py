@@ -31,6 +31,7 @@ from dataclasses import dataclass
 from enum import Enum
 import logging
 from pathlib import Path
+from django.core.files.base import ContentFile
 import re
 from tempfile import TemporaryDirectory
 
@@ -40,6 +41,7 @@ from typing import Optional
 import git
 import json
 import yaml
+import tarfile
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.db import models
@@ -47,6 +49,7 @@ from django.utils import timezone
 from mptt.models import MPTTModel, TreeForeignKey
 
 from instrumentdb import __version__
+
 
 # This is used to validate entity/quantity names, which are used in URLs
 QUANTITY_NAME_REGEXP = re.compile(r"[-a-zA-Z0-9@:%._\+~#=]{1,256}")
@@ -497,33 +500,64 @@ class Release(models.Model):
         help_text="A JSON dump of the release, ready to be downloaded",
     )
 
+    tarball = models.FileField(
+        blank=True,
+        editable=False,
+        upload_to="",
+        help_text="A tarball of the release, including full json file, format specifications, and data files, ready to be downloaded",
+    )
+
     def save(self, *args, **kwargs):
         result = super().save(*args, **kwargs)
 
-        if bool(self.json_file):
-            # The JSON dump already exists
-            return
-
-        with TemporaryDirectory() as tempdir:
-            temp_path = Path(tempdir)
-            json_file_path = dump_db_to_json(
-                ReleaseDumpConfiguration(
-                    no_attachments=True,
-                    only_tree=False,
-                    exist_ok=True,
-                    skip_empty_quantities=False,
-                    skip_empty_entities=False,
-                    output_format=DumpOutputFormat.JSON,
-                    output_folder=temp_path,
-                ),
-                release_tag=str(self.tag),
-            )
-
-            with json_file_path.open("rt") as json_file:
-                self.json_file.save(
-                    name=f"schema_{self.tag}.json",
-                    content=File(json_file),
+        if not bool(self.json_file):
+            with TemporaryDirectory() as tempdir:
+                temp_path = Path(tempdir)
+                json_file_path = dump_db_to_json(
+                    ReleaseDumpConfiguration(
+                        no_attachments=True,
+                        only_tree=False,
+                        exist_ok=True,
+                        skip_empty_quantities=False,
+                        skip_empty_entities=False,
+                        output_format=DumpOutputFormat.JSON,
+                        output_folder=temp_path,
+                    ),
+                    release_tag=str(self.tag),
                 )
+
+                with json_file_path.open("rb") as json_file:
+                    file_content = json_file.read()
+                    self.json_file.save(
+                        name=f"schema_{self.tag}.json",
+                        content=ContentFile(file_content),
+                        save=True,
+                    )
+
+        if not bool(self.tarball):
+            with TemporaryDirectory() as tempdir:
+                temp_path = Path(tempdir)
+
+                tarball_path = dump_db_to_json(
+                    ReleaseDumpConfiguration(
+                        no_attachments=False,
+                        only_tree=False,
+                        exist_ok=True,
+                        skip_empty_quantities=False,
+                        skip_empty_entities=False,
+                        output_format=DumpOutputFormat.JSON,
+                        output_folder=temp_path,
+                    ),
+                    release_tag=str(self.tag),
+                )
+
+                with open(str(tarball_path), "rb") as tarball_file:
+                    file_content = tarball_file.read()
+                    self.tarball.delete(save=False)
+                    self.tarball.save(
+                        ContentFile(file_content),
+                        save=True,
+                    )
 
         return result
 
@@ -940,4 +974,38 @@ def update_release_file_dumps(force: bool = False):
                 cur_release.json_file.save(
                     name=f"schema_{cur_release.tag}.json",
                     content=open(json_file, "rb"),
+                )
+
+
+def update_release_tarball(force: bool = False):
+    """
+    Update the field `tarball` for each `Release` object.
+    """
+
+    for cur_release in Release.objects.all():
+        if bool(cur_release.tarball) and (not force):
+            # The tarball already exists, and we are not required
+            # to recreate it, so let's skip this release
+            continue
+
+        with TemporaryDirectory() as tempdir:
+            tarball_path = dump_db_to_json(
+                ReleaseDumpConfiguration(
+                    no_attachments=False,
+                    only_tree=False,
+                    exist_ok=True,
+                    skip_empty_quantities=False,
+                    skip_empty_entities=False,
+                    output_format=DumpOutputFormat.JSON,
+                    output_folder=temp_path,
+                ),
+                release_tag=str(self.tag),
+            )
+
+            with open(str(tarball_path), "rb") as tarball_file:
+                file_content = tarball_file.read()
+                self.tarball.delete(save=False)
+                self.tarball.save(
+                    ContentFile(file_content),
+                    save=False,
                 )

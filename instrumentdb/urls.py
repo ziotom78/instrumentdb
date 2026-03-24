@@ -46,6 +46,7 @@ from browse.views import (
     browse_release_view,
     login_request,
     ReleaseDownloadView,
+    TarballDownloadView,
     UserView,
     entity_reference_view,
     focal_plane_ui_view,
@@ -104,6 +105,11 @@ urlpatterns = [
         name="release-download-view",
     ),
     path(
+        "browse/releases/<pk>/download_tarball/",
+        TarballDownloadView.as_view(),
+        name="tarball-download-view",
+    ),
+    path(
         "browse/releases/<pk>/document/",
         download_release_document,
         name="release-document-download-view",
@@ -118,12 +124,7 @@ urlpatterns = [
         FormatSpecificationDownloadView.as_view(),
         name="format-spec-download-view",
     ),
-    path(
-        "focalplane_ui/",
-        focal_plane_ui_view,
-        name="focal-plane-ui-view"
-    ),
-
+    path("focalplane_ui/", focal_plane_ui_view, name="focal-plane-ui-view"),
     re_path(
         r"^releases/(?P<rel_name>[\w.-]+)/(?P<reference>[\w./-]+)/$", api_release_view
     ),
@@ -143,22 +144,7 @@ urlpatterns = [
         schema_view.with_ui("swagger", cache_timeout=0),
         name="schema-swagger-ui",
     ),
-    path(
-        "redoc/",
-        schema_view.with_ui("redoc", cache_timeout=0),
-        name="schema-redoc"
-    ),
-
-    path(
-        "handle-plot-click/",
-        handle_plot_click,
-        name="handle-plot-click"
-    ),
-
-    path(
-        "get-full-path/",
-        get_full_path,
-        name="get-full-path"
-    ),
-
+    path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
+    path("handle-plot-click/", handle_plot_click, name="handle-plot-click"),
+    path("get-full-path/", get_full_path, name="get-full-path"),
 ]
