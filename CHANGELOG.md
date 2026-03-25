@@ -1,5 +1,7 @@
 # HEAD
 
+-   Ensure that data files are included in release JSON files [#166](https://github.com/ziotom78/instrumentdb/pull/166)
+
 # Version 3.0.0
 
 -   Add command to delete orphaned objects [#159](https://github.com/ziotom78/instrumentdb/pull/162) (Miguel Gomes)
