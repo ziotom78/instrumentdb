@@ -25,6 +25,7 @@ in the database:
   "quantity" (see above).
 
 """
+
 import mimetypes
 from collections import namedtuple, OrderedDict
 from dataclasses import dataclass
@@ -134,8 +135,7 @@ DOCUMENT_FILE_TYPES = [
         description="Microsoft Excel (.xls)",
     ),
     FileType(
-        mime_type="application/vnd.openxmlformats-officedocument"
-        ".spreadsheetml.sheet",
+        mime_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         file_extension="xlsx",
         description="Microsoft Excel (.xlsx)",
     ),
@@ -498,12 +498,10 @@ class Release(models.Model):
     )
 
     def save(self, *args, **kwargs):
-        result = super().save(*args, **kwargs)
+        return super().save(*args, **kwargs)
 
-        if bool(self.json_file):
-            # The JSON dump already exists
-            return
-
+    def generate_json_dump(self):
+        """(Re)generate the JSON dump for this release"""
         with TemporaryDirectory() as tempdir:
             temp_path = Path(tempdir)
             json_file_path = dump_db_to_json(
@@ -523,9 +521,10 @@ class Release(models.Model):
                 self.json_file.save(
                     name=f"schema_{self.tag}.json",
                     content=File(json_file),
+                    save=False,  # This prevents an infinite loop
                 )
 
-        return result
+        Release.objects.filter(pk=self.pk).update(json_file=self.json_file)
 
 
 ############################################################################
