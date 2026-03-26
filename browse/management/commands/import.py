@@ -5,7 +5,8 @@ import json
 from typing import Any, List, Dict
 from uuid import UUID
 import yaml
-
+from django.db.models.signals import m2m_changed
+from browse.signals import update_release_json_on_m2m
 from django.core.files import File
 from django.utils.dateparse import parse_datetime
 from django.utils.timezone import is_aware, make_aware
@@ -16,7 +17,6 @@ from browse.models import (
     DataFile,
     FormatSpecification,
     Release,
-    update_release_file_dumps,
 )
 
 
@@ -440,9 +440,16 @@ class Command(BaseCommand):
                     },
                 )
 
+                m2m_changed.disconnect(
+                    update_release_json_on_m2m, sender=Release.data_files.through
+                )
                 for cur_uuid in data_files:
                     cur_release.data_files.add(DataFile.objects.get(uuid=cur_uuid))
 
+                m2m_changed.connect(
+                    update_release_json_on_m2m, sender=Release.data_files.through
+                )
+                cur_release.generate_json_dump()
                 cur_release.save()
 
                 if release_fp:
@@ -516,4 +523,4 @@ etc.) will be looked in the directory where this file resides.
 
             self.create_releases(schema.get("releases", []))
 
-        update_release_file_dumps()
+        # generate_json_dumps()

@@ -81,6 +81,7 @@ If the folder does not exist, it will be created.""",
         )
 
     def handle(self, *args, **options):
+        print(options)
         dump_db_to_json(
             ReleaseDumpConfiguration(
                 no_attachments=options["no_attachments"],
