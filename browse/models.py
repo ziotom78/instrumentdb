@@ -36,7 +36,6 @@ import re
 from tempfile import TemporaryDirectory
 import tarfile
 import os
-import shutil
 import uuid
 from typing import Optional
 

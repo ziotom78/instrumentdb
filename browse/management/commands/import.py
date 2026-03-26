@@ -522,5 +522,3 @@ etc.) will be looked in the directory where this file resides.
             self.update_dependencies(dependencies_to_add)
 
             self.create_releases(schema.get("releases", []))
-
-        # generate_json_dumps()
