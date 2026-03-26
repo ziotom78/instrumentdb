@@ -1,6 +1,9 @@
 # HEAD
 
+# Versione 3.1.0
+
 -   Ensure that data files are included in release JSON files [#166](https://github.com/ziotom78/instrumentdb/pull/166)
+
 -   Add button to download full tarball from the release table in the homepage [#167](https://github.com/ziotom78/instrumentdb/pull/167)
 
 # Version 3.0.0
