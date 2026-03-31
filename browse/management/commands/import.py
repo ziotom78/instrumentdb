@@ -71,7 +71,7 @@ class Command(BaseCommand):
             if not self.dry_run:
                 cur_entity = Entity.objects.filter(uuid=uuid)
                 if not (self.no_overwrite and cur_entity):
-                    (cur_entity, _) = Entity.objects.update_or_create(
+                    cur_entity, _ = Entity.objects.update_or_create(
                         uuid=uuid,
                         defaults={
                             "name": cur_entity_name,
@@ -151,7 +151,7 @@ class Command(BaseCommand):
             file_mime_type = spec_dict.get("file_mime_type", "")
 
             if not self.dry_run:
-                (format_spec, _) = FormatSpecification.objects.update_or_create(
+                format_spec, _ = FormatSpecification.objects.update_or_create(
                     uuid=uuid,
                     defaults={
                         "document_ref": document_ref,
@@ -227,7 +227,7 @@ class Command(BaseCommand):
             if self.dry_run:
                 continue
 
-            (quantity, _) = Quantity.objects.update_or_create(
+            quantity, _ = Quantity.objects.update_or_create(
                 uuid=uuid,
                 defaults={
                     "name": name,
@@ -337,7 +337,7 @@ class Command(BaseCommand):
                 parent_uuid = data_file_dict.get("quantity", "")
                 quantity = Quantity.objects.get(uuid=parent_uuid)
 
-            (cur_data_file, _) = DataFile.objects.update_or_create(
+            cur_data_file, _ = DataFile.objects.update_or_create(
                 uuid=uuid,
                 defaults={
                     "name": name,
@@ -430,7 +430,7 @@ class Command(BaseCommand):
             )
 
             if not self.dry_run:
-                (cur_release, _) = Release.objects.update_or_create(
+                cur_release, _ = Release.objects.update_or_create(
                     tag=tag,
                     defaults={
                         "rel_date": rel_date,
